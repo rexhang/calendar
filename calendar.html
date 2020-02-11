@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+	<meta charset="UTF-8">
+	<title>calendar</title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+		}
+		.calendar{
+			border: 1px solid #ccc;
+			padding: 15px;
+			margin: 15px;
+		}
+		.clear:after{
+			display: block;
+			content: "";
+			clear: both;
+		}
+		.calendar:after{
+			display: block;
+			content: "";
+			clear: both;
+		}
+		.month-lists{
+			width: 120px;
+			margin-top: 20px;
+		}
+		.month-lists:after{
+			display: block;
+			content: "";
+			clear: both;
+		}
+		.month-lists .month-name{
+			width: 60px;
+			height: 44px;
+			line-height: 44px;
+			text-align: center;
+			border: 1px solid #ccc;
+			float: left;
+			box-sizing: border-box;
+			cursor: pointer;
+		}
+		.month-lists .month-name.actived{
+			color: #fff;
+			background-color: #f00;
+		}
+		.bar-left{
+			float: left;
+		}
+		.bar-right{
+			float: left;
+			margin-left: 10px;
+			width: calc(100% - 130px);
+		}
+		.week-list{
+			width: 100%;
+			display: flex;
+			border-bottom: 1px solid #ccc;
+		}
+		.week-list .week-name{
+			width: 13.0%;
+			font-weight: bold;
+			line-height: 34px;
+			margin-right: 0.2%;
+		}
+		.week-list .week-name:last-child{
+			margin-right: 0;
+		}
+		.day-list{
+			width: 100%;
+			display: flex;
+			flex-wrap: wrap;
+			margin-top: 10px;
+		}
+		.day-list .day-name{
+			width: 13.0%;
+			height: 120px;
+			border: 1px solid #ccc;
+			margin-right: 0.2%;
+			margin-bottom: 10px;
+			position: relative;
+		}
+		.day-list .day-name.green{
+			background-color: #52b052;
+		}
+		.day-list .day-name.green.gray{
+			opacity: .65;
+			color: gray;
+		}
+		.day-list .day-name.gray{
+			opacity: .65;
+			color: gray;
+		}
+		.day-list .day-name:nth-child(7n){
+			margin-right: 0 !important;
+		}
+		.day-list .day-name .ctnf{
+			padding: 4px 10px;
+		}
+		.day-list .day-name .ctnf .date{
+			float: left;
+		}
+		.day-list .day-name .ctnf .tag{
+			float: left;
+			margin-left: 44px;
+			background-color: green;
+			color: #fff;
+			padding: 4px;
+			border-radius: 4px;
+		}
+		.lists{
+			padding: 0 30px;
+		}
+		.lists li{
+			
+		}
+		.desc{
+			border: 1px solid #ccc;
+			border-right: 0;
+			border-bottom: 0;
+			position: absolute;
+			right: 0;
+			bottom: 0;
+			z-index: 1;
+			padding: 4px;
+		}
+		.desc.red{
+			color: red;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="calendar">
+		<div class="bar-left">
+			<select id="year" onchange="changeYear(this)">
+				<option value="2018">2018</option>
+				<option value="2019">2019</option>
+				<option selected value="2020">2020</option>
+			</select>
+
+			<div class="month-lists" id="month-ctrl">
+				<div binddata="1" class="month-name">1月</div>
+				<div binddata="2" class="month-name actived">2月</div>
+				<div binddata="3" class="month-name">3月</div>
+				<div binddata="4" class="month-name">4月</div>
+				<div binddata="5" class="month-name">5月</div>
+				<div binddata="6" class="month-name">6月</div>
+				<div binddata="7" class="month-name">7月</div>
+				<div binddata="8" class="month-name">8月</div>
+				<div binddata="9" class="month-name">9月</div>
+				<div binddata="10" class="month-name">10月</div>
+				<div binddata="11" class="month-name">11月</div>
+				<div binddata="12" class="month-name">12月</div>
+			</div>
+		</div>
+		<div class="bar-right">
+			<div class="week-list clear">
+				<div class="week-name">周日</div>
+				<div class="week-name">周一</div>
+				<div class="week-name">周二</div>
+				<div class="week-name">周三</div>
+				<div class="week-name">周四</div>
+				<div class="week-name">周五</div>
+				<div class="week-name">周六</div>
+			</div>
+			<div class="day-list clear" id="days-init">
+				<!-- 35 items in -->
+			</div>
+		</div>
+	</div>
+
+	<script>
+		var preset = {
+			year: 2020,
+			month: '2'
+		};
+
+		const monthChangeDom = document.querySelector('#month-ctrl').querySelectorAll('.month-name');
+		monthChangeDom.forEach(function (dom) {
+			dom.addEventListener('click', function (obj) {
+				preset.month = obj.target.getAttribute('binddata');
+				const dateArrays = getMonthDaysArray(preset.year, preset.month);
+				// console.log(dateArrays);
+				setHTML(dateArrays);
+				monthChangeDom.forEach(function (rmdom) {
+					rmdom.setAttribute('class', 'month-name');
+				});
+				obj.target.setAttribute('class', 'month-name actived');
+			}, false);
+		});
+
+		function getMonthDays(year, month){
+		    return new Date(year, month, 0).getDate();
+		}
+
+		function getWeekday(year, month, day){
+		    return new Date(year, month-1, day).getDay();
+		}
+
+		function getweeksInMonth(year, month){
+
+		    var days = getMonthDays(year, month);
+		    var FirstDayWeekday = getWeekday(year, month, 1);
+		    return Math.ceil((days + FirstDayWeekday) / 7);
+		}
+
+		const WEEKTABLE = [{
+		    cn: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+		    en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+		}];
+
+
+		function parseMonth(monthNumber){
+			let month = monthNumber;
+			if (monthNumber > 12) {
+				month = 1;
+			}
+			if (monthNumber < 1) {
+				month = 12;
+			}
+			return month;
+		}
+
+
+		// month params strings
+		function getMonthDaysArray(year, month, type) {
+		    var dayArrays = [];
+		    var days = getMonthDays(year, month); // 返回月天数
+		    var preDays = getMonthDays(year, month - 1); // 返回月天数
+
+		    var thisMonthFirstDayInWeek = getWeekday(year, month, 1); // 输出是周几
+		    var thisMonthLastDayInWeek = getWeekday(year, month, days); // 输出是周几 表示 year 年 month 月 days 是星期几
+
+
+		    // if (['en', 'cn'].includes(type)) {
+		    // 	type = type
+		    // } else{
+		    // 	type = 'cn';
+		    // }
+
+			if (type === 'en' || type === 'cn') {
+				type = type
+			} else{
+				type = 'cn';
+			}
+
+		    //上月在当月日历面板中的排列
+		    for (var i = 0; i < thisMonthFirstDayInWeek; i++) {
+		        dayArrays.push({
+		            day: parseMonth(month*1 - 1) + '-' + (preDays - thisMonthFirstDayInWeek + i + 1),
+		            weekDay: WEEKTABLE[0][type][i],
+		            isWorkingDay: i === 6 || i === 0?false:true,
+		            isCurrentMonth: false,
+		            isCurrentDay: false
+		        })
+		    }
+		    //当月日历面板中的排列
+		    for (var i = 1; i <= days; i++) {
+		        var weekDayFlag = (thisMonthFirstDayInWeek + i - 1) % 7;
+		        dayArrays.push({
+		            day: parseMonth(month*1) + '-' + i,
+		            weekDay: WEEKTABLE[0][type][weekDayFlag],
+		            isWorkingDay: weekDayFlag === 6 || weekDayFlag === 0?false:true,
+		            isCurrentMonth: true,
+		            isCurrentDay: new Date().getDate() === i && preset.year == new Date().getFullYear()
+		        })
+		    }
+		    //下月在当月日历面板中的排列
+		    for (var i = 1; i <= (6 - thisMonthLastDayInWeek); i++) {
+		        var weekDayFlag = (thisMonthFirstDayInWeek + days + i - 1) % 7
+		        dayArrays.push({
+		            day: parseMonth(month*1 + 1) + '-' + i,
+		            weekDay: WEEKTABLE[0][type][weekDayFlag],
+		            isWorkingDay: weekDayFlag === 6 || weekDayFlag === 0?false:true,
+		            isCurrentMonth: false,
+		            isCurrentDay: false
+		        })
+		    }
+		    return dayArrays;
+		}
+
+		var dt = new Date();
+
+		const dateArrays = getMonthDaysArray(preset.year, preset.month);
+
+		console.log(dateArrays);
+
+		function changeYear(obj){
+			preset.year = obj.value * 1;
+			console.log(preset.year, preset.month);
+			const dateArrays = getMonthDaysArray(preset.year, preset.month);
+			// console.log(dateArrays);
+			setHTML(dateArrays);
+		}
+
+
+		function setHTML(arrs) {
+			// 平铺数据
+			var HTMLSTR = "";
+			arrs.forEach(function(arr, index){
+				var str_work = arr.isWorkingDay?'工作日':'周末';
+				var str_work_class = arr.isWorkingDay?'desc':"desc red";
+				var str_day_name_class = "";
+				if (arr.isCurrentMonth){
+					str_day_name_class = arr.isWorkingDay?'day-name':"day-name green";
+				} else {
+					// 非本月的置灰
+					str_day_name_class = arr.isWorkingDay?'day-name gray':"day-name green gray";
+				}
+				var day = arr.day;
+				var today_str = arr.isCurrentDay?'今天':'辛苦了';
+				HTMLSTR += '<div class="'+str_day_name_class+'">'+
+						'<div class="ctnf clear">'+
+						'<div class="date">'+day+'</div>'+
+						'<div class="tag">'+today_str+'</div>'+
+						'</div>'+
+						'<div>'+
+						'<ul class="lists">'+
+						'<li>todo1</li>'+
+						'<li>todo2</li>'+
+						'</ul>'+
+						'</div>'+
+						'<div class="'+str_work_class+'">'+str_work+'</div>'+
+						'</div>';
+
+			});
+			const dom = document.querySelector('#days-init');
+			dom.innerHTML = HTMLSTR;
+		}
+
+		setHTML(dateArrays);
+
+
+
+	</script>
+</body>
+</html>
